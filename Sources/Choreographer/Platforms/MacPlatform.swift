@@ -11,7 +11,7 @@ class MacDriver: VSyncDriver {
     
     struct Request {
         
-        let displayID: CGDirectDisplayID
+        let displayID: CGDirectDisplayID?
     }
     
     struct CoreVideoError: Error {
@@ -20,12 +20,16 @@ class MacDriver: VSyncDriver {
     }
     
     private var displayLink: CVDisplayLink?
-    private let displayID: CGDirectDisplayID
+    private let displayID: CGDirectDisplayID?
     
     required init(request: Request) throws {
         displayID = request.displayID
         
-        let result = CVDisplayLinkCreateWithCGDisplay(displayID, &displayLink)
+        let result = if let displayID {
+            CVDisplayLinkCreateWithCGDisplay(displayID, &displayLink)
+        } else {
+            CVDisplayLinkCreateWithActiveCGDisplays(&displayLink)
+        }
         guard result == kCVReturnSuccess, displayLink != nil else {
             throw CoreVideoError(code: result)
         }
@@ -89,6 +93,13 @@ public extension VSyncObserver {
             fatalError("Invalid screen configuration")
         }
         try VSyncDriverManager.shared.addObserver(self, with: .init(displayID: displayID))
+    }
+    
+    /// Creates an observer capable of being used with all active displays.
+    convenience init() throws {
+        self.init(__internal: ())
+        
+        try VSyncDriverManager.shared.addObserver(self, with: .init(displayID: nil))
     }
 }
 #endif
