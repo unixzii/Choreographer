@@ -34,12 +34,10 @@ class VSyncDriverManager {
                 try driver.detach()
                 self.isAttached = false
             } else if !shouldDetach && !isAttached {
-                // Note: `unowned` is okay here because the instance will never be destroyed
-                // once created.
+                // Note: `unowned` is okay here because the instance
+                // will never be destroyed once created.
                 try driver.attach { [unowned self] context in
-                    DispatchQueue.main.async {
-                        self.notifyObservers(context: context)
-                    }
+                    self.notifyObservers(context: context)
                 }
                 self.isAttached = true
             }

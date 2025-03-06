@@ -4,6 +4,7 @@
 //
 
 /// An abstraction of the VSync driver on each platform.
+@MainActor
 protocol VSyncDriver {
     
     /// A type that describes the sync request.
@@ -25,7 +26,7 @@ protocol VSyncDriver {
     /// This method should detach the existing callback before
     /// attaching the new one.
     func attach(
-        _ callback: @Sendable @escaping (VSyncEventContext) -> Void
+        _ callback: @MainActor @escaping (VSyncEventContext) -> Void
     ) throws
     
     /// Detaches the attached callback and release system resources.

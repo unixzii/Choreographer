@@ -11,7 +11,7 @@ class IOSDriver: NSObject, VSyncDriver {
     struct Request { }
     
     private var displayLink: CADisplayLink?
-    private var callback: ((VSyncEventContext) -> Void)?
+    private var callback: (@MainActor (VSyncEventContext) -> Void)?
     
     required init(request: Request) throws {
         super.init()
@@ -21,9 +21,10 @@ class IOSDriver: NSObject, VSyncDriver {
         return true
     }
     
-    func attach(_ callback: @escaping (VSyncEventContext) -> Void) throws {
+    func attach(_ callback: @MainActor @escaping (VSyncEventContext) -> Void) throws {
         self.callback = callback
-        let displayLink = CADisplayLink(target: self, selector: #selector(handleDisplayLinkEvent))
+        let displayLink = CADisplayLink(target: self,
+                                        selector: #selector(handleDisplayLinkEvent))
         displayLink.add(to: .main, forMode: .common)
         self.displayLink = displayLink
     }

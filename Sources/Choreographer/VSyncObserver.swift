@@ -24,7 +24,7 @@ public class VSyncObserver {
     weak var owner: VSyncDriverManager.DriverInstanceBase?
     
     /// The closure that is invoked to update a frame.
-    public var frameUpdateHandler: ((VSyncEventContext) -> Void)?
+    public var frameUpdateHandler: (@MainActor (VSyncEventContext) -> Void)?
     
     /// A dummy initializer to prevent clients from creating observers
     /// directly without the platform-specific initializers.

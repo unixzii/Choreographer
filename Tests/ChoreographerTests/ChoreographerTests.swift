@@ -8,6 +8,14 @@ import Testing
 @testable import Choreographer
 
 @Test @MainActor func smokeTest() async throws {
+    func createPlatformVSyncObserver() throws -> VSyncObserver {
+        #if os(macOS)
+        return try VSyncObserver(screen: .main!)
+        #else
+        return try VSyncObserver()
+        #endif
+    }
+    
     func waitForEvents(from observer: VSyncObserver) async -> CFTimeInterval {
         return await withUnsafeContinuation { cont in
             observer.frameUpdateHandler = {
@@ -17,8 +25,8 @@ import Testing
         }
     }
     
-    let observer1 = try VSyncObserver(screen: .main!)
-    let observer2 = try VSyncObserver(screen: .main!)
+    let observer1 = try createPlatformVSyncObserver()
+    let observer2 = try createPlatformVSyncObserver()
     
     // Wait for 10 frames.
     var lastTimestamp: CFTimeInterval?
@@ -42,7 +50,7 @@ import Testing
     #expect(VSyncDriverManager.shared.isAllDriversIdle)
     
     // Create new observers after the driver was idle should also work.
-    let observer3 = try VSyncObserver(screen: .main!)
+    let observer3 = try createPlatformVSyncObserver()
     _ = await waitForEvents(from: observer3)
     try observer3.invalidate()
 }

@@ -39,16 +39,17 @@ class MacDriver: VSyncDriver {
         return displayID == request.displayID
     }
     
-    func attach(_ callback: @Sendable @escaping (VSyncEventContext) -> Void) throws {
+    func attach(_ callback: @MainActor @escaping (VSyncEventContext) -> Void) throws {
         guard let displayLink else {
             preconditionFailure("The display link should be created before this call")
         }
         
-        var result = CVDisplayLinkSetOutputHandler(displayLink) { _, _, outputTime, _, _ in
-            let targetTimestamp = outputTime.pointee
-            callback(.init(
-                targetTimestamp: Double(targetTimestamp.videoTime) / Double(targetTimestamp.videoTimeScale)
-            ))
+        var result = CVDisplayLinkSetOutputHandler(displayLink) { _, _, outputTimePtr, _, _ in
+            let outputTime = outputTimePtr.pointee
+            let targetTimestamp = Double(outputTime.videoTime) / Double(outputTime.videoTimeScale)
+            DispatchQueue.main.async {
+                callback(.init(targetTimestamp: targetTimestamp))
+            }
             return kCVReturnSuccess
         }
         guard result == kCVReturnSuccess else {
