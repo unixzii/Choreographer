@@ -4,8 +4,8 @@ A simple cross-platform library for handling VSync events.
 
 ## Supported Platforms
 
-- macOS (10.13+)
-- iOS (12.0+)
+- macOS (10.15+)
+- iOS (13.0+)
 
 ## Getting Started
 
