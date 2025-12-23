@@ -15,7 +15,6 @@ class IOSDriver: NSObject, VSyncDriver {
     private var displayLink: CADisplayLink?
     private var callback: (@MainActor (VSyncEventContext) -> Void)?
     private var cancellables: Set<AnyCancellable> = .init()
-    private var isAttached: Bool = false
     
     required init(request: Request) throws {
         super.init()
@@ -37,23 +36,13 @@ class IOSDriver: NSObject, VSyncDriver {
     }
     
     func attach(_ callback: @MainActor @escaping (VSyncEventContext) -> Void) throws {
-        guard !isAttached else {
-            return
-        }
-        
-        isAttached = true
         self.callback = callback
         prepareDisplayLinkIfNeeded()
     }
     
     func detach() throws {
-        guard isAttached else {
-            return
-        }
-        
         invalidateDisplayLink()
         callback = nil
-        isAttached = false
     }
     
     @objc private func handleDisplayLinkEvent() {
@@ -63,7 +52,7 @@ class IOSDriver: NSObject, VSyncDriver {
     }
     
     private func prepareDisplayLinkIfNeeded() {
-        guard isAttached, displayLink == nil else {
+        guard callback != nil, displayLink == nil else {
             return
         }
         
