@@ -4,7 +4,9 @@
 //
 
 #if os(iOS) || os(tvOS)
+import Combine
 import QuartzCore
+import UIKit
 
 class IOSDriver: NSObject, VSyncDriver {
     
@@ -12,9 +14,22 @@ class IOSDriver: NSObject, VSyncDriver {
     
     private var displayLink: CADisplayLink?
     private var callback: (@MainActor (VSyncEventContext) -> Void)?
+    private var cancellables: Set<AnyCancellable> = .init()
+    private var isAttached: Bool = false
     
     required init(request: Request) throws {
         super.init()
+        
+        NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)
+            .sink { [weak self] _ in
+                self?.invalidateDisplayLink()
+            }
+            .store(in: &cancellables)
+        NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .sink { [weak self] _ in
+                self?.prepareDisplayLinkIfNeeded()
+            }
+            .store(in: &cancellables)
     }
     
     func isCompatible(with request: Request) -> Bool {
@@ -22,23 +37,47 @@ class IOSDriver: NSObject, VSyncDriver {
     }
     
     func attach(_ callback: @MainActor @escaping (VSyncEventContext) -> Void) throws {
+        guard !isAttached else {
+            return
+        }
+        
+        isAttached = true
         self.callback = callback
-        let displayLink = CADisplayLink(target: self,
-                                        selector: #selector(handleDisplayLinkEvent))
-        displayLink.add(to: .main, forMode: .common)
-        self.displayLink = displayLink
+        prepareDisplayLinkIfNeeded()
     }
     
     func detach() throws {
-        displayLink?.invalidate()
-        displayLink = nil
+        guard isAttached else {
+            return
+        }
+        
+        invalidateDisplayLink()
         callback = nil
+        isAttached = false
     }
     
     @objc private func handleDisplayLinkEvent() {
         if let callback, let displayLink {
             callback(.init(targetTimestamp: displayLink.targetTimestamp))
         }
+    }
+    
+    private func prepareDisplayLinkIfNeeded() {
+        guard isAttached, displayLink == nil else {
+            return
+        }
+        
+        let displayLink = CADisplayLink(target: self, selector: #selector(handleDisplayLinkEvent))
+        if #available(iOS 15.0, *) {
+            displayLink.preferredFrameRateRange = .init(minimum: 80, maximum: 120, preferred: 120)
+        }
+        displayLink.add(to: .main, forMode: .common)
+        self.displayLink = displayLink
+    }
+    
+    private func invalidateDisplayLink() {
+        displayLink?.invalidate()
+        displayLink = nil
     }
 }
 
