@@ -21,11 +21,21 @@ class IOSDriver: NSObject, VSyncDriver {
         
         NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)
             .sink { [weak self] _ in
-                self?.invalidateDisplayLink()
+                guard let self else {
+                    return
+                }
+                let isDisplayLinkActive = displayLink != nil
+                invalidateDisplayLink()
+                if isDisplayLinkActive {
+                    NotificationCenter.default.post(name: VSyncObserver.interruptionNotification, object: nil)
+                }
             }
             .store(in: &cancellables)
         NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
             .sink { [weak self] _ in
+                if self?.callback != nil {
+                    NotificationCenter.default.post(name: VSyncObserver.resumeNotification, object: nil)
+                }
                 self?.prepareDisplayLinkIfNeeded()
             }
             .store(in: &cancellables)
