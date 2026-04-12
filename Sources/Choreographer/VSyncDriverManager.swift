@@ -52,7 +52,7 @@ class VSyncDriverManager {
     
     #if os(macOS)
     typealias PlatformDriver = MacDriver
-    #elseif os(iOS)
+    #elseif os(iOS) || os(tvOS)
     typealias PlatformDriver = IOSDriver
     #else
     #error("This platform is not supported.")

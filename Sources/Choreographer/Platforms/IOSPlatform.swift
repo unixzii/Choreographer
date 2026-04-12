@@ -57,7 +57,7 @@ class IOSDriver: NSObject, VSyncDriver {
         }
         
         let displayLink = CADisplayLink(target: self, selector: #selector(handleDisplayLinkEvent))
-        if #available(iOS 15.0, *) {
+        if #available(iOS 15.0, tvOS 15.0, *) {
             displayLink.preferredFrameRateRange = .init(minimum: 80, maximum: 120, preferred: 120)
         }
         displayLink.add(to: .main, forMode: .common)
