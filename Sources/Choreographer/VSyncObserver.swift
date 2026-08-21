@@ -3,7 +3,7 @@
 //  Copyright (c) 2025 Cyandev. All rights reserved.
 //
 
-import CoreFoundation
+import Foundation
 
 /// A type that represents the context of a VSync event.
 public struct VSyncEventContext: Sendable {
@@ -20,6 +20,12 @@ public struct VSyncEventContext: Sendable {
 /// will leak.
 @MainActor
 public class VSyncObserver {
+    
+    #if os(iOS) || os(tvOS)
+    public static let interruptionNotification: Notification.Name = .init("VSyncObserverInterruptionNotification")
+    
+    public static let resumeNotification: Notification.Name = .init("VSyncObserverResumeNotification")
+    #endif
     
     weak var owner: VSyncDriverManager.DriverInstanceBase?
     
